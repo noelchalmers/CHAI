@@ -71,10 +71,11 @@ CHAI_HOST_DEVICE ManagedArray<T>::ManagedArray():
 }
 
 template<typename T>
+template<int N>
 CHAI_INLINE
 CHAI_HOST_DEVICE ManagedArray<T>::ManagedArray(
-    std::initializer_list<chai::ExecutionSpace> spaces,
-    std::initializer_list<umpire::Allocator> allocators):
+    std::array<chai::ExecutionSpace, N> spaces,
+    std::array<umpire::Allocator, N> allocators):
   ManagedArray()
 {
 #if !defined(__CUDA_ARCH__)
@@ -109,11 +110,12 @@ CHAI_HOST_DEVICE ManagedArray<T>::ManagedArray(
 }
 
 template<typename T>
+template<int N>
 CHAI_INLINE
 CHAI_HOST_DEVICE ManagedArray<T>::ManagedArray(
     size_t elems, 
-    std::initializer_list<chai::ExecutionSpace> spaces,
-    std::initializer_list<umpire::Allocator> allocators,
+    std::array<chai::ExecutionSpace, N> spaces,
+    std::array<umpire::Allocator, N> allocators,
     ExecutionSpace space):
   ManagedArray(spaces, allocators)
 {

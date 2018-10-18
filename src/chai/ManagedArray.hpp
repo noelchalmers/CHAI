@@ -99,9 +99,10 @@ public:
   /*!
    * \brief Default constructor creates a ManagedArray with no allocations.
    */
+  template<int N>
   CHAI_HOST_DEVICE ManagedArray(
-      std::initializer_list<chai::ExecutionSpace> spaces,
-      std::initializer_list<umpire::Allocator> allocators);
+      std::array<chai::ExecutionSpace, N> spaces,
+      std::array<umpire::Allocator, N> allocators);
 
   /*!
    * \brief Constructor to create a ManagedArray with specified size, allocated
@@ -118,10 +119,11 @@ public:
       size_t elems,
       ExecutionSpace space = NONE);
 
+  template<int N>
   CHAI_HOST_DEVICE ManagedArray(
       size_t elems,
-      std::initializer_list<chai::ExecutionSpace> spaces,
-      std::initializer_list<umpire::Allocator> allocators,
+      std::array<chai::ExecutionSpace, N> spaces,
+      std::array<umpire::Allocator, N> allocators,
       ExecutionSpace space = NONE);
 
   /*!
@@ -152,7 +154,7 @@ public:
    */
   CHAI_HOST void allocate(size_t elems,
                           ExecutionSpace space = CPU,
-                          UserCallback const& cback =
+                          UserCallback cback =
                               [](Action, ExecutionSpace, size_t) {});
 
   /*!
