@@ -1,6 +1,12 @@
+# [submodule "blt"]
+# 	path = blt
+# 	url = https://github.com/LLNL/blt.git
+# [submodule "src/tpl/umpire"]
+# 	path = src/tpl/umpire
+# 	url = https://github.com/LLNL/Umpire.git
 [submodule "blt"]
 	path = blt
-	url = https://github.com/LLNL/blt.git
+	url = https://github.com/noelchalmers/blt.git
 [submodule "src/tpl/umpire"]
 	path = src/tpl/umpire
-	url = https://github.com/LLNL/Umpire.git
+	url = https://github.com/noelchalmers/Umpire.git
