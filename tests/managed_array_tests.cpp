@@ -47,6 +47,11 @@
   TEST(X, Y) { cuda_test_##X##Y(); } \
   static void cuda_test_##X##Y()
 
+#define HIP_TEST(X, Y)              \
+  static void hip_test_##X##Y();    \
+  TEST(X, Y) { hip_test_##X##Y(); } \
+  static void hip_test_##X##Y()
+
 #include "chai/config.hpp"
 
 #include "../src/util/forall.hpp"
@@ -95,6 +100,15 @@ TEST(ManagedArray, SpaceConstructorUM)
   array.free();
 }
 #endif
+#endif
+
+#if defined(CHAI_ENABLE_HIP)
+TEST(ManagedArray, SpaceConstructorGPU)
+{
+  chai::ManagedArray<float> array(10, chai::GPU);
+  ASSERT_EQ(array.size(), 10u);
+  array.free();
+}
 #endif
 
 TEST(ManagedArray, SetOnHost)
@@ -506,6 +520,143 @@ CUDA_TEST(ManagedArray, SetOnDeviceUM)
 #endif
 #endif
 
+
+#if defined(CHAI_ENABLE_HIP)
+#if defined(CHAI_ENABLE_PICK)
+
+#if (!defined(CHAI_DISABLE_RM))
+HIP_TEST(ManagedArray, PickandSetDeviceToDevice)
+{
+  chai::ManagedArray<int> array1(10);
+  chai::ManagedArray<int> array2(10);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array1[i] = i; });
+
+  chai::ManagedArray<const int> array_const(array1);
+
+  forall(hip(), 0, 10, [=] __device__(int i) {
+    int temp = array1.pick(i);
+    temp += array_const.pick(i);
+    array2.set(i, temp);
+  });
+
+  forall(sequential(), 0, 10, [=](int i) { ASSERT_EQ(array2[i], i + i); });
+
+  array1.free();
+  array2.free();
+}
+
+
+HIP_TEST(ManagedArray, PickHostFromDevice)
+{
+  chai::ManagedArray<int> array(10);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = i; });
+
+  int temp = array.pick(5);
+  ASSERT_EQ(temp, 5);
+
+  array.free();
+}
+
+HIP_TEST(ManagedArray, PickHostFromDeviceConst)
+{
+  chai::ManagedArray<int> array(10);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = i; });
+
+  chai::ManagedArray<const int> array_const(array);
+
+  forall(sequential(), 0, 10, [=](int i) { ASSERT_EQ(array_const[i], i); });
+
+  int temp = array_const.pick(5);
+  ASSERT_EQ(temp, 5);
+
+  array.free();
+  // array_const.free();
+}
+
+HIP_TEST(ManagedArray, SetHostToDevice)
+{
+  chai::ManagedArray<int> array(10);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = i; });
+
+  int temp = 10;
+  array.set(5, temp);
+  temp = array.pick(5);
+  ASSERT_EQ(temp, 10);
+
+  array.free();
+}
+HIP_TEST(ManagedArray, IncrementDecrementOnDevice)
+{
+  chai::ManagedArray<int> arrayI(10);
+  chai::ManagedArray<int> arrayD(10);
+
+  forall(hip(), 0, 10, [=] __device__(int i) {
+    arrayI[i] = i;
+    arrayD[i] = i;
+  });
+
+  forall(hip(), 0, 10, [=] __device__(int i) {
+    arrayI.incr(i);
+    arrayD.decr(i);
+  });
+
+  forall(sequential(), 0, 10, [=](int i) {
+    ASSERT_EQ(arrayI[i], i + 1);
+    ASSERT_EQ(arrayD[i], i - 1);
+  });
+
+  arrayI.free();
+  arrayD.free();
+}
+
+HIP_TEST(ManagedArray, IncrementDecrementFromHostOnDevice)
+{
+  chai::ManagedArray<int> array(10);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = i; });
+
+  array.incr(5);
+  array.decr(9);
+
+  int temp;
+  temp = array.pick(5);
+  ASSERT_EQ(temp, 6);
+
+  temp = array.pick(9);
+  ASSERT_EQ(temp, 8);
+
+  array.free();
+}
+#endif
+#endif
+
+HIP_TEST(ManagedArray, SetOnDevice)
+{
+  chai::ManagedArray<float> array(10);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = i; });
+
+  forall(sequential(), 0, 10, [=](int i) { ASSERT_EQ(array[i], i); });
+
+  array.free();
+}
+
+HIP_TEST(ManagedArray, GetGpuOnHost)
+{
+  chai::ManagedArray<float> array(10, chai::GPU);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = i; });
+
+  forall(sequential(), 0, 10, [=](int i) { ASSERT_EQ(array[i], i); });
+
+  array.free();
+}
+#endif
+
 TEST(ManagedArray, Allocate)
 {
   chai::ManagedArray<float> array;
@@ -542,6 +693,28 @@ CUDA_TEST(ManagedArray, ReallocateGPU)
   ASSERT_EQ(array.size(), 10u);
 
   forall(cuda(), 0, 10, [=] __device__(int i) { array[i] = i; });
+
+  array.reallocate(20);
+  ASSERT_EQ(array.size(), 20u);
+
+  forall(sequential(), 0, 20, [=](int i) {
+    if (i < 10) {
+      ASSERT_EQ(array[i], i);
+    } else {
+      array[i] = i;
+      ASSERT_EQ(array[i], i);
+    }
+  });
+}
+#endif
+
+#if defined(CHAI_ENABLE_HIP)
+HIP_TEST(ManagedArray, ReallocateGPU)
+{
+  chai::ManagedArray<float> array(10);
+  ASSERT_EQ(array.size(), 10u);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = i; });
 
   array.reallocate(20);
   ASSERT_EQ(array.size(), 20u);
@@ -605,6 +778,23 @@ CUDA_TEST(ManagedArray, PodTestGPU)
   chai::ManagedArray<my_point> array(1);
 
   forall(cuda(), 0, 1, [=] __device__(int i) {
+    array[i].x = (double)i;
+    array[i].y = (double)i * 2.0;
+  });
+
+  forall(sequential(), 0, 1, [=](int i) {
+    ASSERT_EQ(array[i].x, i);
+    ASSERT_EQ(array[i].y, i * 2.0);
+  });
+}
+#endif
+
+#if defined(CHAI_ENABLE_HIP)
+HIP_TEST(ManagedArray, PodTestGPU)
+{
+  chai::ManagedArray<my_point> array(1);
+
+  forall(hip(), 0, 1, [=] __device__(int i) {
     array[i].x = (double)i;
     array[i].y = (double)i * 2.0;
   });
@@ -828,3 +1018,148 @@ CUDA_TEST(ManagedArray, DeviceDeepCopy)
 }
 #endif
 #endif  // defined(CHAI_ENABLE_CUDA)
+
+
+#if defined(CHAI_ENABLE_HIP)
+#ifndef CHAI_DISABLE_RM
+HIP_TEST(ManagedArray, ResetDevice)
+{
+  chai::ManagedArray<float> array(20);
+
+  forall(sequential(), 0, 20, [=](int i) { array[i] = 0.0f; });
+
+  forall(hip(), 0, 20, [=] __device__(int i) { array[i] = 1.0f * i; });
+
+  array.reset();
+
+  forall(sequential(), 0, 20, [=](int i) { ASSERT_EQ(array[i], 0.0f); });
+}
+#endif
+#endif
+
+
+#if defined(CHAI_ENABLE_HIP)
+#ifndef CHAI_DISABLE_RM
+HIP_TEST(ManagedArray, UserCallback)
+{
+  int num_h2d = 0;
+  int num_d2h = 0;
+  size_t bytes_h2d = 0;
+  size_t bytes_d2h = 0;
+  size_t bytes_alloc = 0;
+  size_t bytes_free = 0;
+
+  chai::ManagedArray<float> array;
+  array.allocate(20,
+                 chai::CPU,
+                 [&](chai::Action act, chai::ExecutionSpace s, size_t bytes) {
+                   // printf("cback: act=%d, space=%d, bytes=%ld\n",
+                   //   (int)act, (int)s, (long)bytes);
+                   if (act == chai::ACTION_MOVE) {
+                     if (s == chai::CPU) {
+                       ++num_d2h;
+                       bytes_d2h += bytes;
+                     }
+                     if (s == chai::GPU) {
+                       ++num_h2d;
+                       bytes_h2d += bytes;
+                     }
+                   }
+                   if (act == chai::ACTION_ALLOC) {
+                     bytes_alloc += bytes;
+                   }
+                   if (act == chai::ACTION_FREE) {
+                     bytes_free += bytes;
+                   }
+                 });
+
+  for (int iter = 0; iter < 10; ++iter) {
+    forall(sequential(), 0, 20, [=](int i) { array[i] = 0.0f; });
+
+    forall(hip(), 0, 20, [=] __device__(int i) { array[i] = 1.0f * i; });
+  }
+
+
+  ASSERT_EQ(num_d2h, 9);
+  ASSERT_EQ(bytes_d2h, 9 * sizeof(float) * 20);
+  ASSERT_EQ(num_h2d, 10);
+  ASSERT_EQ(bytes_h2d, 10 * sizeof(float) * 20);
+
+  array.free();
+
+  ASSERT_EQ(bytes_alloc, 2 * 20 * sizeof(float));
+  ASSERT_EQ(bytes_free, 2 * 20 * sizeof(float));
+}
+#endif
+#endif
+
+
+#if defined(CHAI_ENABLE_HIP)
+#ifndef CHAI_DISABLE_RM
+HIP_TEST(ManagedArray, Move)
+{
+  chai::ManagedArray<float> array(10, chai::GPU);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = i; });
+
+  array.move(chai::CPU);
+
+  ASSERT_EQ(array[5], 5);
+
+  array.free();
+}
+
+HIP_TEST(ManagedArray, MoveInnerImpl)
+{
+  chai::ManagedArray<chai::ManagedArray<int>> originalArray(3, chai::CPU);
+
+  for (int i = 0; i < 3; ++i) {
+    auto temp = chai::ManagedArray<int>(5, chai::GPU);
+
+    forall(hip(), 0, 5, [=] __device__(int j) { temp[j] = j; });
+
+    originalArray[i] = temp;
+  }
+
+  auto copiedArray = chai::ManagedArray<chai::ManagedArray<int>>(originalArray);
+
+  for (int i = 0; i < 3; ++i) {
+    auto temp = copiedArray[i];
+
+    forall(sequential(), 0, 5, [=](int j) { ASSERT_EQ(temp[j], j); });
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    copiedArray[i].free();
+  }
+
+  copiedArray.free();
+}
+
+#endif  // CHAI_DISABLE_RM
+#endif  // defined(CHAI_ENABLE_HIP)
+
+#if defined(CHAI_ENABLE_HIP)
+#ifndef CHAI_DISABLE_RM
+HIP_TEST(ManagedArray, DeviceDeepCopy)
+{
+  chai::ManagedArray<float> array(10, chai::GPU);
+  ASSERT_EQ(array.size(), 10u);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = i; });
+
+  chai::ManagedArray<float> copy = chai::deepCopy(array);
+  ASSERT_EQ(copy.size(), 10u);
+
+  forall(hip(), 0, 10, [=] __device__(int i) { array[i] = -5.5 * i; });
+
+  forall(sequential(), 0, 10, [=](int i) {
+    ASSERT_EQ(copy[i], i);
+    ASSERT_EQ(array[i], -5.5 * i);
+  });
+
+  array.free();
+  copy.free();
+}
+#endif
+#endif  // defined(CHAI_ENABLE_HIP)

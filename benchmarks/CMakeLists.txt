@@ -51,6 +51,12 @@ if (ENABLE_CUDA)
     cuda)
 endif ()
 
+if (ENABLE_HIP)
+  set (chai_benchmark_depends
+    ${chai_benchmark_depends}
+    hip)
+endif ()
+
 blt_add_executable(
   NAME arraymanager_benchmarks
   SOURCES chai_arraymanager_benchmarks.cpp

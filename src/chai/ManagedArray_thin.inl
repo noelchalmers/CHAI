@@ -48,6 +48,9 @@
 #if defined(CHAI_ENABLE_UM)
 #include <cuda_runtime_api.h>
 #endif
+#if defined(CHAI_ENABLE_HIP)
+#include <hip/hip/_runtime.h>
+#endif
 
 namespace chai {
 
@@ -163,8 +166,13 @@ template<typename T>
 CHAI_INLINE
 CHAI_HOST_DEVICE
 typename ManagedArray<T>::T_non_const ManagedArray<T>::pick(size_t i) const { 
-#if !defined(__CUDA_ARCH__) && defined(CHAI_ENABLE_UM)
+#if !defined(__HIP_DEVICE_COMPILE__) && defined(CHAI_ENABLE_UM)
+#if defined(CHAI_ENABLE_CUDA)
   cudaDeviceSynchronize();
+#endif
+#if defined(CHAI_ENABLE_HIP)
+  hipDeviceSynchronize();
+#endif
 #endif
   return (T_non_const) m_active_pointer[i]; 
 }
@@ -172,8 +180,13 @@ typename ManagedArray<T>::T_non_const ManagedArray<T>::pick(size_t i) const {
 template<typename T>
 CHAI_INLINE
 CHAI_HOST_DEVICE void ManagedArray<T>::set(size_t i, T& val) const { 
-#if !defined(__CUDA_ARCH__) && defined(CHAI_ENABLE_UM)
+#if !defined(__HIP_DEVICE_COMPILE__) && defined(CHAI_ENABLE_UM)
+#if defined(CHAI_ENABLE_CUDA)
   cudaDeviceSynchronize();
+#endif
+#if defined(CHAI_ENABLE_HIP)
+  hipDeviceSynchronize();
+#endif
 #endif
   m_active_pointer[i] = val; 
 }
@@ -181,8 +194,13 @@ CHAI_HOST_DEVICE void ManagedArray<T>::set(size_t i, T& val) const {
 template<typename T>
 CHAI_INLINE
 CHAI_HOST_DEVICE void ManagedArray<T>::incr(size_t i) const { 
-#if !defined(__CUDA_ARCH__) && defined(CHAI_ENABLE_UM)
+#if !defined(__HIP_DEVICE_COMPILE__) && defined(CHAI_ENABLE_UM)
+#if defined(CHAI_ENABLE_CUDA)
   cudaDeviceSynchronize();
+#endif
+#if defined(CHAI_ENABLE_HIP)
+  hipDeviceSynchronize();
+#endif
 #endif
   ++m_active_pointer[i]; 
 }
@@ -190,8 +208,13 @@ CHAI_HOST_DEVICE void ManagedArray<T>::incr(size_t i) const {
 template<typename T>
 CHAI_INLINE
 CHAI_HOST_DEVICE void ManagedArray<T>::decr(size_t i) const { 
-#if !defined(__CUDA_ARCH__) && defined(CHAI_ENABLE_UM)
+#if !defined(__HIP_DEVICE_COMPILE__) && defined(CHAI_ENABLE_UM)
+#if defined(CHAI_ENABLE_CUDA)
   cudaDeviceSynchronize();
+#endif
+#if defined(CHAI_ENABLE_HIP)
+  hipDeviceSynchronize();
+#endif
 #endif
   --m_active_pointer[i]; 
 }

@@ -43,6 +43,7 @@
 
 set(CHAI_ENABLE_PICK ${ENABLE_PICK})
 set(CHAI_ENABLE_CUDA ${ENABLE_CUDA})
+set(CHAI_ENABLE_HIP ${ENABLE_HIP})
 set(CHAI_ENABLE_IMPLICIT_CONVERSIONS ${ENABLE_IMPLICIT_CONVERSIONS})
 set(CHAI_DISABLE_RM ${DISABLE_RM})
 set(CHAI_ENABLE_UM ${ENABLE_UM})
@@ -77,6 +78,12 @@ if (ENABLE_CUDA)
   set (chai_depends
     ${chai_depends}
     cuda_runtime)
+endif ()
+
+if (ENABLE_HIP)
+  set (chai_depends
+    ${chai_depends}
+    hip)
 endif ()
 
 blt_add_library(

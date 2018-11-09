@@ -55,6 +55,9 @@
 #if defined(CHAI_ENABLE_UM)
 #include <cuda_runtime_api.h>
 #endif
+#if defined(CHAI_ENABLE_HIP)
+#include <hip/hip_runtime.h>
+#endif
 
 namespace chai {
 

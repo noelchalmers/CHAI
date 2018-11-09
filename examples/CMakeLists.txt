@@ -47,3 +47,10 @@ if (ENABLE_CUDA)
     SOURCES example.cpp
     DEPENDS_ON cuda chai)
 endif ()
+
+if (ENABLE_HIP)
+  blt_add_executable(
+    NAME chai-example.exe
+    SOURCES example.cpp
+    DEPENDS_ON hip chai)
+endif ()

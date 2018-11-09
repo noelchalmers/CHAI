@@ -71,18 +71,33 @@ int main(int CHAI_UNUSED_ARG(argc), char** CHAI_UNUSED_ARG(argv))
   forall(sequential(), 0, 10, [=](int i) { std::cout << " " << v1[i]; });
   std::cout << " ]" << std::endl;
 
+#if defined(CHAI_ENABLE_CUDA)
   std::cout << "Setting v2 and device_array on device." << std::endl;
   forall(cuda(), 0, 10, [=] __device__(int i) {
     v2[i] = v1[i] * 2.0f;
     device_array[i] = i;
   });
+#endif
+#if defined(CHAI_ENABLE_HIP)
+  std::cout << "Setting v2 and device_array on device." << std::endl;
+  forall(hip(), 0, 10, [=] __device__(int i) {
+    v2[i] = v1[i] * 2.0f;
+    device_array[i] = i;
+  });
+#endif
 
   std::cout << "v2 = [";
   forall(sequential(), 0, 10, [=](int i) { std::cout << " " << v2[i]; });
   std::cout << " ]" << std::endl;
 
+#if defined(CHAI_ENABLE_CUDA)
   std::cout << "Doubling v2 on device." << std::endl;
   forall(cuda(), 0, 10, [=] __device__(int i) { v2[i] *= 2.0f; });
+#endif
+#if defined(CHAI_ENABLE_HIP)
+  std::cout << "Doubling v2 on device." << std::endl;
+  forall(hip(), 0, 10, [=] __device__(int i) { v2[i] *= 2.0f; });
+#endif
 
   std::cout << "Casting v2 to a pointer." << std::endl;
   float* raw_v2 = v2;

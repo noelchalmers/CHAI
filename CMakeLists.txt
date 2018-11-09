@@ -46,6 +46,7 @@ cmake_policy(SET CMP0057 NEW)
 project(Chai LANGUAGES CXX)
 
 set(ENABLE_CUDA On CACHE BOOL "Enable CUDA")
+set(ENABLE_HIP On CACHE BOOL "Enable HIP")
 set(ENABLE_OPENMP On CACHE BOOL "Enable OpenMP")
 set(ENABLE_BENCHMARKS On CACHE Bool "Enable benchmarks")
 option(ENABLE_IMPLICIT_CONVERSIONS "Enable implicit conversions to-from raw pointers" On)
@@ -61,10 +62,6 @@ set(ENABLE_DOCUMENTATION On CACHE Bool "")
 set(ENABLE_GMOCK On CACHE Bool "")
 set(ENABLE_ASSERTS "Build Umpire with assert() enabled" On)
 set(ENABLE_GTEST_DEATH_TESTS ${ENABLE_ASSERTS} CACHE Bool "")
-
-if (ENABLE_UM AND NOT ENABLE_CUDA)
-  message(FATAL_ERROR "Option ENABLE_UM requires ENABLE_CUDA")
-endif()
 
 if (ENABLE_UM AND NOT ENABLE_CUDA)
   message(FATAL_ERROR "Option ENABLE_UM requires ENABLE_CUDA")
