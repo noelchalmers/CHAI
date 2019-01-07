@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------
-// Copyright (c) 2016, Lawrence Livermore National Security, LLC. All
+// Copyright (c) 2016-2018, Lawrence Livermore National Security, LLC. All
 // rights reserved.
 //
 // Produced at the Lawrence Livermore National Laboratory.
@@ -49,6 +49,9 @@
 #include "chai/ChaiMacros.hpp"
 #include "chai/Types.hpp"
 
+#include "umpire/Allocator.hpp"
+
+#include <array>
 #include <cstddef>
 
 namespace chai
@@ -91,10 +94,14 @@ class ManagedArray : public CHAICopyable
 public:
   using T_non_const = typename std::remove_const<T>::type;
 
+  CHAI_HOST_DEVICE ManagedArray();
+
   /*!
    * \brief Default constructor creates a ManagedArray with no allocations.
    */
-  CHAI_HOST_DEVICE ManagedArray();
+  CHAI_HOST_DEVICE ManagedArray(
+      std::initializer_list<chai::ExecutionSpace> spaces,
+      std::initializer_list<umpire::Allocator> allocators);
 
   /*!
    * \brief Constructor to create a ManagedArray with specified size, allocated
@@ -107,7 +114,15 @@ public:
    * \param elems Number of elements in the array.
    * \param space Execution space in which to allocate the array.
    */
-  CHAI_HOST_DEVICE ManagedArray(size_t elems, ExecutionSpace space = NONE);
+  CHAI_HOST_DEVICE ManagedArray(
+      size_t elems,
+      ExecutionSpace space = NONE);
+
+  CHAI_HOST_DEVICE ManagedArray(
+      size_t elems,
+      std::initializer_list<chai::ExecutionSpace> spaces,
+      std::initializer_list<umpire::Allocator> allocators,
+      ExecutionSpace space = NONE);
 
   /*!
    * \brief Copy constructor handles data movement.
@@ -178,6 +193,7 @@ public:
 
   CHAI_HOST void move(ExecutionSpace space);
 
+  CHAI_HOST ManagedArray<T> slice(size_t begin, size_t end);
   /*!
    * \brief Return reference to i-th element of the ManagedArray.
    *
@@ -192,7 +208,7 @@ public:
    * \brief get access to m_active_pointer
    * @return a copy of m_active_pointer
    */
-  T* getActivePointer() const;
+  T* getActiveBasePointer() const;
 
   /*!
    * \brief
@@ -323,6 +339,7 @@ private:
    * Currently active data pointer.
    */
   mutable T* m_active_pointer;
+  mutable T* m_active_base_pointer;
 
   /*!
    * Pointer to ArrayManager instance.
@@ -333,11 +350,15 @@ private:
    * Number of elements in the ManagedArray.
    */
   size_t m_elems;
+  size_t m_offset = 0;
 
   /*!
    * Pointer to PointerRecord data.
    */
   PointerRecord* m_pointer_record;
+ 
+  bool m_is_slice = false;
+ 
 };
 
 /*!
@@ -389,8 +410,8 @@ ManagedArray<T> makeManagedArray(T* data,
 template <typename T>
 ManagedArray<T> deepCopy(ManagedArray<T> const& array)
 {
-  T* data_ptr = array.getActivePointer();
-
+  T* data_ptr = array.getActiveBasePointer();
+  
   ArrayManager* manager = ArrayManager::getInstance();
 
   PointerRecord const* record = manager->getPointerRecord(data_ptr);

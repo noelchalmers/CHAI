@@ -1,32 +1,32 @@
 #######################################################################
-# Copyright (c) 2016, Lawrence Livermore National Security, LLC. All
+# Copyright (c) 2016-2018, Lawrence Livermore National Security, LLC. All
 # rights reserved.
-# 
+#
 # Produced at the Lawrence Livermore National Laboratory.
-# 
+#
 # This file is part of CHAI.
-# 
+#
 # LLNL-CODE-705877
-# 
+#
 # For details, see https:://github.com/LLNL/CHAI
 # Please also see the NOTICE and LICENSE files.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
-# 
+#
 # - Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
-# 
+#
 # - Redistributions in binary form must reproduce the above copyright
 #   notice, this list of conditions and the following disclaimer in the
 #   documentation and/or other materials provided with the
 #   distribution.
-# 
+#
 # - Neither the name of the LLNS/LLNL nor the names of its contributors
 #   may be used to endorse or promote products derived from this
 #   software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -41,7 +41,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #######################################################################
 
+set (chai_umpire_depends
+  chai)
+
 if (ENABLE_CUDA)
+  set (chai_umpire_depends
+    ${chai_umpire_depends}
+    cuda)
+
   blt_add_executable(
     NAME chai-example.exe
     SOURCES example.cpp
@@ -49,8 +56,17 @@ if (ENABLE_CUDA)
 endif ()
 
 if (ENABLE_HIP)
+  set (chai_umpire_depends
+    ${chai_umpire_depends}
+    hip)
+
   blt_add_executable(
     NAME chai-example.exe
     SOURCES example.cpp
     DEPENDS_ON hip chai)
 endif ()
+
+blt_add_executable(
+  NAME chai-umpire-example.exe
+  SOURCES chai-umpire-allocators.cpp
+  DEPENDS_ON ${chai_umpire_depends})

@@ -40,28 +40,51 @@
 // WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // ---------------------------------------------------------------------
+#include "gtest/gtest.h"
+
+#define CUDA_TEST(X, Y)              \
+  static void cuda_test_##X##Y();    \
+  TEST(X, Y) { cuda_test_##X##Y(); } \
+  static void cuda_test_##X##Y()
+
+#include "chai/config.hpp"
+
 #include "chai/ManagedArray.hpp"
-#include "chai/util/forall.hpp"
 
-int main(int CHAI_UNUSED_ARG(argc), char** CHAI_UNUSED_ARG(argv))
+TEST(ManagedArray, DefaultConstructor)
 {
-  /*
-   * Allocate an array.
-   */
-  chai::ManagedArray<double> array(50);
-
-  /*
-   * Fill data on the device
-   */
-#if defined(CHAI_USE_CUDA)
-  forall(cuda(), 0, 50, [=] __device__(int i) { array[i] = i * 2.0f; });
-#elif defined(CHAI_USE_HIP)
-  forall(hip(), 0, 50, [=] __device__(int i) { array[i] = i * 2.0f; });
-#endif
-  /*
-   * Print the array on the host, data is automatically copied back.
-   */
-  std::cout << "array = [";
-  forall(sequential(), 0, 10, [=](int i) { std::cout << " " << array[i]; });
-  std::cout << " ]" << std::endl;
+  chai::ManagedArray<float> array;
+  ASSERT_EQ(array.size(), 0u);
 }
+
+TEST(ManagedArray, SizeConstructor)
+{
+  chai::ManagedArray<float> array(10);
+  ASSERT_EQ(array.size(), 10u);
+  array.free();
+}
+
+TEST(ManagedArray, SpaceConstructorCPU)
+{
+  chai::ManagedArray<float> array(10, chai::CPU);
+  ASSERT_EQ(array.size(), 10u);
+  array.free();
+}
+
+#if defined(CHAI_ENABLE_CUDA)
+TEST(ManagedArray, SpaceConstructorGPU)
+{
+  chai::ManagedArray<float> array(10, chai::GPU);
+  ASSERT_EQ(array.size(), 10u);
+  array.free();
+}
+
+#if defined(CHAI_ENABLE_UM)
+TEST(ManagedArray, SpaceConstructorUM)
+{
+  chai::ManagedArray<float> array(10, chai::UM);
+  ASSERT_EQ(array.size(), 10u);
+  array.free();
+}
+#endif
+#endif

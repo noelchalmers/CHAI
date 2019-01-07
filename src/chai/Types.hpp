@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------
-// Copyright (c) 2016, Lawrence Livermore National Security, LLC. All
+// Copyright (c) 2016-2018, Lawrence Livermore National Security, LLC. All
 // rights reserved.
 //
 // Produced at the Lawrence Livermore National Laboratory.
@@ -47,13 +47,14 @@
 
 namespace chai
 {
-typedef unsigned int uint;
 
+typedef unsigned int uint;
 
 enum Action { ACTION_ALLOC, ACTION_FREE, ACTION_MOVE };
 
 using UserCallback = std::function<void(Action, ExecutionSpace, size_t)>;
-}  // namespace chai
+
+} // end of namespace chai
 
 
 #endif

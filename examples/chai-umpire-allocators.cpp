@@ -40,28 +40,56 @@
 // WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // ---------------------------------------------------------------------
+#include "umpire/ResourceManager.hpp"
+#include "umpire/strategy/DynamicPool.hpp"
+
 #include "chai/ManagedArray.hpp"
-#include "chai/util/forall.hpp"
+#include "../src/util/forall.hpp"
+
+#include <iostream>
 
 int main(int CHAI_UNUSED_ARG(argc), char** CHAI_UNUSED_ARG(argv))
 {
-  /*
-   * Allocate an array.
-   */
-  chai::ManagedArray<double> array(50);
 
-  /*
-   * Fill data on the device
-   */
-#if defined(CHAI_USE_CUDA)
-  forall(cuda(), 0, 50, [=] __device__(int i) { array[i] = i * 2.0f; });
-#elif defined(CHAI_USE_HIP)
-  forall(hip(), 0, 50, [=] __device__(int i) { array[i] = i * 2.0f; });
+  auto& rm = umpire::ResourceManager::getInstance();
+
+  auto cpu_pool =
+      rm.makeAllocator<umpire::strategy::DynamicPool>("cpu_pool",
+                                                      rm.getAllocator("HOST"));
+
+#if defined(CHAI_ENABLE_CUDA) || defined(CHAI_ENABLE_HIP)
+  auto gpu_pool =
+      rm.makeAllocator<umpire::strategy::DynamicPool>("gpu_pool",
+                                                      rm.getAllocator("DEVICE"));
 #endif
-  /*
-   * Print the array on the host, data is automatically copied back.
-   */
-  std::cout << "array = [";
-  forall(sequential(), 0, 10, [=](int i) { std::cout << " " << array[i]; });
-  std::cout << " ]" << std::endl;
+
+  chai::ManagedArray<float> array(100,
+      std::initializer_list<chai::ExecutionSpace>{chai::CPU
+#if defined(CHAI_ENABLE_CUDA) || defined(CHAI_ENABLE_HIP)
+      , chai::GPU
+#endif
+      },
+      std::initializer_list<umpire::Allocator>{cpu_pool
+#if defined(CHAI_ENABLE_CUDA) || defined(CHAI_ENABLE_HIP)
+      , gpu_pool
+#endif
+      });
+
+  forall(sequential(), 0, 100, [=](int i) { array[i] = 0.0f; });
+
+#if defined(CHAI_ENABLE_CUDA)
+  forall(cuda(), 0, 100, [=] __device__(int i) { array[i] = 1.0f * i; });
+#elif defined(CHAI_ENABLE_HIP)
+  forall(hip(), 0, 100, [=] __device__(int i) { array[i] = 1.0f * i; });
+#else
+  forall(sequential(), 0, 100, [=] (int i) { array[i] = 1.0f * i; });
+#endif
+
+  forall(sequential(), 0, 100, [=] (int i) {
+      if (array[i] != (1.0f * i)) {
+        std::cout << "ERROR!" << std::endl;
+      }
+  });
+
+  array.free();
 }
