@@ -79,6 +79,11 @@ else ()
   cmake_minimum_required(VERSION 3.8)
 endif()
 
+if (ENABLE_HIP)
+  #bug in ROCm 2.0 is incorrectly warning about missing overrides
+  set(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} -Wno-inconsistent-missing-override")
+endif()
+
 ################################
 # BLT
 ################################
