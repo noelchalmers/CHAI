@@ -37,6 +37,7 @@ blt_add_benchmark(
   NAME managedarray_benchmarks
   COMMAND managedarray_benchmarks)
 
+if (NOT ENABLE_HIP)
 blt_add_executable(
   NAME managed_ptr_benchmarks
   SOURCES chai_managed_ptr_benchmarks.cpp
@@ -45,4 +46,4 @@ blt_add_executable(
 blt_add_benchmark(
   NAME managed_ptr_benchmarks
   COMMAND managed_ptr_benchmarks)
-
+endif()

@@ -24,6 +24,7 @@ blt_add_test(
   NAME managed_array_test
   COMMAND managed_array_tests)
 
+if (NOT ENABLE_HIP)
 blt_add_executable(
   NAME managed_ptr_tests
   SOURCES managed_ptr_tests.cpp
@@ -36,14 +37,16 @@ target_include_directories(
 blt_add_test(
   NAME managed_ptr_test
   COMMAND managed_ptr_tests)
-  
+endif()
+
+
 if (ENABLE_RAJA_PLUGIN)
   set(raja_test_depends
     ${chai_integration_test_depends}
     RAJA)
 
   blt_add_executable(
-    NAME raja-chai-tests 
+    NAME raja-chai-tests
     SOURCES raja-chai-tests.cpp
     DEPENDS_ON ${raja_test_depends})
 
@@ -56,7 +59,7 @@ if (ENABLE_RAJA_PLUGIN)
     PUBLIC ${PROJECT_BINARY_DIR}/include)
 
   blt_add_executable(
-    NAME raja-chai-nested-tests 
+    NAME raja-chai-nested-tests
     SOURCES raja-chai-nested.cpp
     DEPENDS_ON ${raja_test_depends})
 

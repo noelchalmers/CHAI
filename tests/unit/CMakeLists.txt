@@ -6,7 +6,7 @@
 ##############################################################################
 set (chai_unit_test_depends
      chai umpire gtest)
-     
+
 blt_list_append(TO chai_unit_test_depends ELEMENTS cuda IF ${ENABLE_CUDA})
 blt_list_append(TO chai_unit_test_depends ELEMENTS hip IF ${ENABLE_HIP})
 
@@ -36,6 +36,7 @@ blt_add_test(
   NAME array_manager_unit_test
   COMMAND array_manager_unit_tests)
 
+if (NOT ENABLE_HIP)
 blt_add_executable(
   NAME managed_ptr_unit_tests
   SOURCES managed_ptr_unit_tests.cpp
@@ -48,3 +49,4 @@ target_include_directories(
 blt_add_test(
   NAME managed_ptr_unit_test
   COMMAND managed_ptr_unit_tests)
+endif()
